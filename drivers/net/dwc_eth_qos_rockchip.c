@@ -737,9 +737,14 @@ static int eqos_stop_clks_rk(struct udevice *dev)
 {
 	struct eth_pdata *pdata = dev_get_plat(dev);
 	struct rockchip_platform_data *data = pdata->priv_pdata;
+	struct eqos_priv *eqos = dev_get_priv(dev);
 
 	if (data->ops->set_clock_selection)
 		data->ops->set_clock_selection(dev, false);
+
+	clk_disable(&eqos->clk_master_bus);
+	if (clk_valid(&eqos->clk_tx))
+		clk_disable(&eqos->clk_tx);
 
 	return 0;
 }
@@ -750,6 +755,21 @@ static int eqos_start_clks_rk(struct udevice *dev)
 	struct eth_pdata *pdata = dev_get_plat(dev);
 	struct rockchip_platform_data *data = pdata->priv_pdata;
 	int tx_delay, rx_delay, ret;
+
+	ret = clk_enable(&eqos->clk_master_bus);
+	if (ret < 0) {
+		pr_err("clk_enable(clk_master_bus) failed: %d\n", ret);
+		return ret;
+	}
+
+	if (clk_valid(&eqos->clk_tx)) {
+		ret = clk_enable(&eqos->clk_tx);
+		if (ret < 0) {
+			pr_err("clk_enable(clk_tx) failed: %d\n", ret);
+			clk_disable(&eqos->clk_master_bus);
+			return ret;
+		}
+	}
 
 	if (dm_gpio_is_valid(&eqos->phy_reset_gpio)) {
 		udelay(eqos->reset_delays[1]);
