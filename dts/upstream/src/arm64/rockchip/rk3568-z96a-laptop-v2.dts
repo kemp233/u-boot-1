@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
- * Sunniwell Z96A RK3568 Laptop — minimal U-Boot DT
- * Linux still boots with Armbian kernel DTB for full peripherals.
+ * Sunniwell Z96A RK3568 Laptop V2 — minimal U-Boot DT
+ * Hardware V2: RK809 + HUSB311 + CN3705
+ * Linux continues to use Armbian: rockchip/rk3568-z96a-laptop-v2.dtb
  */
 
 /dts-v1/;
@@ -11,8 +12,8 @@
 #include "rk3568.dtsi"
 
 / {
-	model = "Sunniwell Z96A RK3568 Laptop";
-	compatible = "sunniwell,z96a-rk3568", "rockchip,rk3568";
+	model = "Sunniwell Z96A RK3568 Laptop V2";
+	compatible = "sunniwell,z96a-rk3568-laptop-v2", "rockchip,rk3568";
 
 	aliases {
 		mmc0 = &sdhci;
@@ -46,7 +47,7 @@
 	status = "okay";
 };
 
-/* RK809 PMIC + HUSB311 on I2C0 (V2) — enable bus for U-Boot i2c probe */
+/* V2: RK809 + HUSB311 on I2C0 */
 &i2c0 {
 	status = "okay";
 	clock-frequency = <100000>;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
-/* Z96A U-Boot specific bits */
+/* Z96A Laptop V2 — U-Boot only fragments */
 
 #include "rk356x-u-boot.dtsi"
 #include "rk3568-u-boot.dtsi"
