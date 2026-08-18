@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/* Z96A U-Boot specific bits */
+
+#include "rk356x-u-boot.dtsi"
+#include "rk3568-u-boot.dtsi"
+
+&uart2 {
+	bootph-all;
+	status = "okay";
+};
+
+&i2c0 {
+	bootph-pre-ram;
+	status = "okay";
+};
+
+&saradc {
+	status = "okay";
+};
