@@ -39,39 +39,14 @@ void set_back_to_bootrom_dnl_flag(void)
 
 __weak int rockchip_dnl_key_pressed(void)
 {
-#if CONFIG_IS_ENABLED(ADC)
-	unsigned int val;
-	struct udevice *dev;
-	struct uclass *uc;
-	int ret;
-
-	ret = uclass_get(UCLASS_ADC, &uc);
-	if (ret)
-		return false;
-
-	ret = -ENODEV;
-	uclass_foreach_dev(dev, uc) {
-		if (!strncmp(dev->name, "saradc", 6)) {
-			ret = adc_channel_single_shot(dev->name, 1, &val);
-			break;
-		}
-	}
-
-	if (ret == -ENODEV) {
-		pr_warn("%s: no saradc device found\n", __func__);
-		return false;
-	} else if (ret) {
-		pr_err("%s: adc_channel_single_shot fail!\n", __func__);
-		return false;
-	}
-
-	if ((val >= KEY_DOWN_MIN_VAL) && (val <= KEY_DOWN_MAX_VAL))
-		return true;
-	else
-		return false;
-#else
+	/*
+	 * Default OFF: with a working SARADC vref, idle channel samples often
+	 * fall in KEY_DOWN_MIN/MAX (0..30) and cause reboot loops:
+	 *   "download key pressed, entering download mode...resetting ..."
+	 * Z96A recovery/volume key is adc-keys on ch0 (factory), not this ch1
+	 * heuristic. Board code may override this weak symbol if needed.
+	 */
 	return false;
-#endif
 }
 
 void rockchip_dnl_mode_check(void)
