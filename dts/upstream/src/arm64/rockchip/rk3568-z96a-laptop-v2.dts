@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 /*
- * Sunniwell Z96A RK3568 Laptop V2 — minimal U-Boot DT
- * Hardware V2: RK809 + HUSB311 + CN3705
- * Linux continues to use Armbian: rockchip/rk3568-z96a-laptop-v2.dtb
+ * Sunniwell Z96A RK3568 Laptop V2 — U-Boot DT
+ * V2: RK809 + HUSB311 + CN3705
+ * Recovery/download key = SARADC (adc-keys), NOT a plain GPIO.
+ * Factory U-Boot had adc-keys on saradc ch0 (volume up / recovery).
+ * rockchip_dnl_key_pressed() samples saradc ch1 (0..30 = pressed).
  */
 
 /dts-v1/;
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include "rk3568.dtsi"
 
@@ -24,6 +27,52 @@
 
 	chosen {
 		stdout-path = "serial2:1500000n8";
+	};
+
+	/*
+	 * SARADC VREF must be present or probe fails with:
+	 *   can't get vref-supply: -2
+	 *   rockchip_dnl_key_pressed: adc_channel_single_shot fail!
+	 * Use a fixed 1.8V rail (same as other RK3568 boards' vcca_1v8).
+	 * Keep always-on/boot-on; do not require full RK809 tree in U-Boot.
+	 */
+	vcca_1v8: regulator-vcca-1v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcca_1v8";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	/* Factory/armbian U-Boot extract: adc-keys on SARADC ch0 */
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		status = "okay";
+		bootph-all;
+
+		/* Factory: label "volume up", near-0V = pressed (0x09 uV) */
+		volumeup-key {
+			label = "volume up";
+			linux,code = <KEY_VOLUMEUP>;
+			press-threshold-microvolt = <1750>;
+			bootph-all;
+		};
+
+		/*
+		 * Same electrical key often silkscreened Recovery on the case.
+		 * Keep a recovery-named node for clarity (same ch0 threshold).
+		 * If hardware uses a second ADC ladder tap, adjust channel/threshold.
+		 */
+		button-recovery {
+			label = "Recovery";
+			linux,code = <KEY_VENDOR>;
+			press-threshold-microvolt = <1750>;
+			bootph-all;
+		};
 	};
 };
 
@@ -54,7 +103,9 @@
 };
 
 &saradc {
+	vref-supply = <&vcca_1v8>;
 	status = "okay";
+	bootph-all;
 };
 
 &usb_host0_xhci {
