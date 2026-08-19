@@ -41,51 +41,42 @@ void set_back_to_bootrom_dnl_flag(void)
 __weak int rockchip_dnl_key_pressed(void)
 {
 	/*
-	 * Factory Recovery / volume-up = SARADC channel 0 (adc-keys), near 0V pressed.
-	 * Do NOT use the old ch1 raw 0..30 heuristic: with working vref it false-triggers
-	 * "download key pressed...resetting" reboot loops on idle.
+	 * Factory U-Boot DTB (z96a-extract/factory.dts):
+	 *   adc-keys on SARADC ch0, label "volume up", press thr = 9 uV
+	 * Case "Recovery" == this key -> BOOT_BROM_DOWNLOAD (Maskrom/rockusb),
+	 * not Android recovery partition (that is reboot-mode 0x5242c303).
+	 * Never use ch1 raw 0..30 (idle false reboot after vref).
 	 */
+	unsigned int raw = ~0U;
+	int ret, pressed = 0;
+
 #if CONFIG_IS_ENABLED(BUTTON)
 	{
 		struct udevice *btn;
-		static const char *const labels[] = { "volume up", "Recovery" };
-		int i;
 
-		for (i = 0; i < 2; i++) {
-			if (button_get_by_label(labels[i], &btn))
-				continue;
+		if (!button_get_by_label("volume up", &btn)) {
 			if (button_get_state(btn) == BUTTON_ON) {
-				printf("dnl-key: '%s' pressed (adc-keys)\n", labels[i]);
-				return true;
+				printf("dnl-key: button 'volume up' ON\n");
+				pressed = 1;
 			}
 		}
 	}
 #endif
 #if CONFIG_IS_ENABLED(ADC)
-	{
-		unsigned int raw = ~0U;
-		int ret;
-
-		ret = adc_channel_single_shot("saradc", 0, &raw);
-		if (ret)
-			ret = adc_channel_single_shot("saradc@fe720000", 0, &raw);
-		if (ret) {
-			debug("%s: ch0 read fail %d\n", __func__, ret);
-			return false;
-		}
-		/* ~0V on 1.8V SARADC => small raw; factory used ~0x09 */
-		if (raw <= 40) {
-			printf("dnl-key: saradc ch0 raw=%u (Recovery/vol-up)\n", raw);
-			return true;
-		}
-		return false;
+	ret = adc_channel_single_shot("saradc", 0, &raw);
+	if (ret)
+		ret = adc_channel_single_shot("saradc@fe720000", 0, &raw);
+	if (ret) {
+		printf("dnl-key: saradc ch0 read fail %d\n", ret);
+	} else {
+		printf("dnl-key: saradc ch0 raw=%u (press if raw<=40, factory thr~0)\n",
+		       raw);
+		if (raw <= 40)
+			pressed = 1;
 	}
-#else
-	return false;
 #endif
+	return pressed;
 }
-
-
 
 void rockchip_dnl_mode_check(void)
 {

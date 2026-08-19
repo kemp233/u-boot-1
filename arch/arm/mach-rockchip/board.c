@@ -202,6 +202,8 @@ int board_late_init(void)
 
 int board_init(void)
 {
+	/* Factory Recovery/volume-up: check early, not only board_late_init */
+	rockchip_dnl_mode_check();
 	return 0;
 }
 
