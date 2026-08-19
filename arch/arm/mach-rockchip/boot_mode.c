@@ -4,6 +4,7 @@
  */
 
 #include <adc.h>
+#include <button.h>
 #include <command.h>
 #include <env.h>
 #include <log.h>
@@ -40,14 +41,53 @@ void set_back_to_bootrom_dnl_flag(void)
 __weak int rockchip_dnl_key_pressed(void)
 {
 	/*
-	 * Default OFF: with a working SARADC vref, idle channel samples often
-	 * fall in KEY_DOWN_MIN/MAX (0..30) and cause reboot loops:
-	 *   "download key pressed, entering download mode...resetting ..."
-	 * Z96A recovery/volume key is adc-keys on ch0 (factory), not this ch1
-	 * heuristic. Board code may override this weak symbol if needed.
+	 * Factory Recovery / volume-up = SARADC **channel 0** (adc-keys), near 0V pressed.
+	 * Do NOT use the old ch1 raw 0..30 heuristic: with working vref it false-triggers
+	 * "download key pressed...resetting" reboot loops on idle.
 	 */
+#if CONFIG_IS_ENABLED(BUTTON)
+	{
+		struct udevice *btn;
+		static const char *const labels[] = { "volume up", "Recovery" };
+		int i;
+
+		for (i = 0; i < 2; i++) {
+			if (button_get_by_label(labels[i], &btn))
+				continue;
+			if (button_get_state(btn) == BUTTON_ON) {
+				printf("dnl-key: '%s' pressed (adc-keys)
+", labels[i]);
+				return true;
+			}
+		}
+	}
+#endif
+#if CONFIG_IS_ENABLED(ADC)
+	{
+		unsigned int raw = ~0U;
+		int ret;
+
+		ret = adc_channel_single_shot("saradc", 0, &raw);
+		if (ret)
+			ret = adc_channel_single_shot("saradc@fe720000", 0, &raw);
+		if (ret) {
+			debug("%s: ch0 read fail %d
+", __func__, ret);
+			return false;
+		}
+		/* ~0V on 1.8V 10/12-bit SARADC => small raw; factory used ~0x09 */
+		if (raw <= 40) {
+			printf("dnl-key: saradc ch0 raw=%u (Recovery/vol-up)
+", raw);
+			return true;
+		}
+		return false;
+	}
+#else
 	return false;
+#endif
 }
+
 
 void rockchip_dnl_mode_check(void)
 {
