@@ -148,6 +148,40 @@
 			sound-dai = <&rk809>;
 		};
 	};
+	/* SARADC 4-button keypad (back/menu/vol-down/vol-up), vref from RK809 LDO_REG7 */
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+		status = "okay";
+
+		back-key {
+			label = "back";
+			linux,code = <KEY_BACK>;
+			press-threshold-microvolt = <1345000>;
+		};
+
+		menu-key {
+			label = "menu";
+			linux,code = <KEY_MENU>;
+			press-threshold-microvolt = <270000>;
+		};
+
+		vol-down-key {
+			label = "volume down";
+			linux,code = <KEY_VOLUMEDOWN>;
+			press-threshold-microvolt = <479000>;
+		};
+
+		vol-up-key {
+			label = "volume up";
+			linux,code = <KEY_VOLUMEUP>;
+			press-threshold-microvolt = <3590000>;
+		};
+	};
+
 
 	/* SDIO WiFi power sequencing */
 	sdio_pwrseq: sdio-pwrseq {
@@ -183,41 +217,6 @@
 		status = "okay";
 	};
 };
-
-	/* SARADC 4-button keypad (back/menu/vol-down/vol-up), vref from RK809 LDO_REG7 */
-	adc-keys {
-		compatible = "adc-keys";
-		io-channels = <&saradc 0>;
-		io-channel-names = "buttons";
-		keyup-threshold-microvolt = <1800000>;
-		poll-interval = <100>;
-		status = "okay";
-		bootph-all;
-
-		back-key {
-			label = "back";
-			linux,code = <KEY_BACK>;
-			press-threshold-microvolt = <1345000>;
-		};
-
-		menu-key {
-			label = "menu";
-			linux,code = <KEY_MENU>;
-			press-threshold-microvolt = <270000>;
-		};
-
-		vol-down-key {
-			label = "volume down";
-			linux,code = <KEY_VOLUMEDOWN>;
-			press-threshold-microvolt = <479000>;
-		};
-
-		vol-up-key {
-			label = "volume up";
-			linux,code = <KEY_VOLUMEUP>;
-			press-threshold-microvolt = <3590000>;
-		};
-	};
 
 /* Serial console */
 &uart2 {
