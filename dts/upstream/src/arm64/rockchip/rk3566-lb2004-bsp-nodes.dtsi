@@ -1,0 +1,60 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * BSP node stubs for LB2004
+ * These nodes exist in the BSP kernel's rk3566.dtsi but are missing
+ * from U-Boot's mainline dts/upstream copy.
+ */
+
+/ {
+	bus_npu: bus_npu {
+		compatible = "simple-bus";
+		status = "disabled";
+	};
+
+
+
+	npu: npu@fde40000 {
+		compatible = "rockchip,rk3568-npu";
+		status = "disabled";
+	};
+
+	pcie30phy: pcie30phy {
+		compatible = "rockchip,rk3568-pcie3-phy";
+		status = "disabled";
+	};
+
+	pcie3x2: pcie3x2 {
+		compatible = "rockchip,rk3568-pcie";
+		status = "disabled";
+	};
+
+	can0: can@fe570000 {
+		compatible = "rockchip,rk3568-can";
+		status = "disabled";
+	};
+
+	can1: can@fe590000 {
+		compatible = "rockchip,rk3568-can";
+		status = "disabled";
+	};
+
+	can2: can@fe5a0000 {
+		compatible = "rockchip,rk3568-can";
+		status = "disabled";
+	};
+
+	pwm16_32k: pwm {
+		compatible = "pwm-clock";
+		status = "disabled";
+	};
+
+	adc_keys: adc-keys {
+		compatible = "adc-keys";
+		status = "disabled";
+	};
+
+	gpio_keys: gpio-keys {
+		compatible = "gpio-keys";
+		status = "disabled";
+	};
+};

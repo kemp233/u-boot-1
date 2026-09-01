@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0+
+// U-Boot specific overrides for LB2004
+// Fix: dwc_eth_qos driver expects different clock-names than upstream DTS
+#include "rk356x-u-boot.dtsi"
+
+&gmac1 {
+	// U-Boot dwc_eth_qos probe requires these clock names:
+	//   "master_bus" (ACLK_GMAC1), "slave_bus" (PCLK_GMAC1),
+	//   "rx" (SCLK_GMAC1_RX_TX), "ptp_ref" (CLK_GMAC1_PTP_REF),
+	//   "tx" (SCLK_GMAC1_RX_TX)
+	clocks = <&cru ACLK_GMAC1>, <&cru PCLK_GMAC1>,
+		 <&cru SCLK_GMAC1_RX_TX>, <&cru CLK_GMAC1_PTP_REF>,
+		 <&cru SCLK_GMAC1_RX_TX>;
+	clock-names = "master_bus", "slave_bus",
+		      "rx", "ptp_ref",
+		      "tx";
+};
+
+&gpio4 {
+	bootph-pre-ram;
+};
+
+&sfc {
+	flash@0 {
+		bootph-pre-ram;
+		bootph-some-ram;
+	};
+};
