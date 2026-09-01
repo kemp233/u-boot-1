@@ -184,21 +184,7 @@
 	};
 };
 
-	/* ---- SARADC vref (1.8V from RK809 LDO_REG7) + 4-button keypad ----
-	 *
-	 * Hardware (verified from running device's /proc/device-tree/adc-keys):
-	 *   - 4 buttons on SARADC ch0, ladder-resistor voltage division:
-	 *       back-key    : label="back"        thr=~1.345V  KEY_BACK      (0x9e)
-	 *       menu-key    : label="menu"        thr=~0.270V  KEY_MENU      (0x8b)
-	 *       vol-down-key: label="volume down" thr=~0.479V  KEY_VOLUMEDOWN(0x72)
-	 *       vol-up-key  : label="volume up"   thr=~3.590V  KEY_VOLUMEUP  (0x73)
-	 *   - SARADC vref must be supplied or adc_channel_single_shot() returns
-	 *     -EINVAL at probe time. RK809 LDO_REG7 (vcca_1v8) is already
-	 *     always-on/boot-on, no regulator-fixed stub needed.
-	 *   - U-Boot's rockchip_dnl_key_pressed() looks for "volume up" /
-	 *     "Recovery" / "menu" labels; lb2004 has all three, so the same
-	 *     function (boot_mode.c) recovers lb2004 too.
-	 */
+	/* SARADC 4-button keypad (back/menu/vol-down/vol-up), vref from RK809 LDO_REG7 */
 	adc-keys {
 		compatible = "adc-keys";
 		io-channels = <&saradc 0>;
