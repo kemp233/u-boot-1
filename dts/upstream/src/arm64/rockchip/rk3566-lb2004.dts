@@ -9,7 +9,7 @@
 /dts-v1/;
 
 #include <dt-bindings/gpio/gpio.h>
-
+#include <dt-bindings/input/input.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/soc/rockchip,vop2.h>
 #include "rk3566.dtsi"
@@ -184,6 +184,55 @@
 	};
 };
 
+	/* ---- SARADC vref (1.8V from RK809 LDO_REG7) + 4-button keypad ----
+	 *
+	 * Hardware (verified from running device's /proc/device-tree/adc-keys):
+	 *   - 4 buttons on SARADC ch0, ladder-resistor voltage division:
+	 *       back-key    : label="back"        thr=~1.345V  KEY_BACK      (0x9e)
+	 *       menu-key    : label="menu"        thr=~0.270V  KEY_MENU      (0x8b)
+	 *       vol-down-key: label="volume down" thr=~0.479V  KEY_VOLUMEDOWN(0x72)
+	 *       vol-up-key  : label="volume up"   thr=~3.590V  KEY_VOLUMEUP  (0x73)
+	 *   - SARADC vref must be supplied or adc_channel_single_shot() returns
+	 *     -EINVAL at probe time. RK809 LDO_REG7 (vcca_1v8) is already
+	 *     always-on/boot-on, no regulator-fixed stub needed.
+	 *   - U-Boot's rockchip_dnl_key_pressed() looks for "volume up" /
+	 *     "Recovery" / "menu" labels; lb2004 has all three, so the same
+	 *     function (boot_mode.c) recovers lb2004 too.
+	 */
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+		status = "okay";
+		bootph-all;
+
+		back-key {
+			label = "back";
+			linux,code = <KEY_BACK>;
+			press-threshold-microvolt = <1345000>;
+		};
+
+		menu-key {
+			label = "menu";
+			linux,code = <KEY_MENU>;
+			press-threshold-microvolt = <270000>;
+		};
+
+		vol-down-key {
+			label = "volume down";
+			linux,code = <KEY_VOLUMEDOWN>;
+			press-threshold-microvolt = <479000>;
+		};
+
+		vol-up-key {
+			label = "volume up";
+			linux,code = <KEY_VOLUMEUP>;
+			press-threshold-microvolt = <3590000>;
+		};
+	};
+
 /* Serial console */
 &uart2 {
 	status = "okay";
@@ -193,6 +242,12 @@
 &uart1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart1m0_xfer &uart1m0_ctsn>;
+	status = "okay";
+};
+
+/* SARADC — vref from RK809 LDO_REG7 (vcca_1v8), needed by adc-keys above */
+&saradc {
+	vref-supply = <&vcca_1v8>;
 	status = "okay";
 };
 
