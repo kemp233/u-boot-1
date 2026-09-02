@@ -1,0 +1,50 @@
+name: Build U-Boot (Z96A RK3568)
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+jobs:
+  build-z96a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu device-tree-compiler \
+            python3-pyelftools swig libssl-dev bc bison flex u-boot-tools
+
+      - name: Fetch Z96A firmware blobs (DDR TPL + BL31)
+        run: |
+          mkdir -p blobs
+          base="https://raw.githubusercontent.com/kemp233/armbian-build-sunniwell-Z96a/main/packages/blobs/rk35"
+          curl -fsSL "$base/rk3568_ddr_1184MHz_android5042_z96a.bin" -o blobs/rk3568_ddr.bin
+          curl -fsSL "$base/rk3568_bl31_v1.43.elf"              -o blobs/bl31.elf
+          ls -la blobs/
+
+      - name: Build (z96a-rk3568-laptop-v2_defconfig)
+        run: |
+          make CROSS_COMPILE=aarch64-linux-gnu- z96a-rk3568-laptop-v2_defconfig
+          make -j$(nproc) CROSS_COMPILE=aarch64-linux-gnu- \
+            ROCKCHIP_TPL=$PWD/blobs/rk3568_ddr.bin \
+            BL31=$PWD/blobs/bl31.elf \
+            spl/u-boot-spl u-boot.bin flash.bin idbloader.img u-boot.itb
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: z96a-u-boot-${{ github.sha }}
+          path: |
+            idbloader.img
+            u-boot.itb
+            u-boot.bin
+            flash.bin
+            spl/u-boot-spl.bin
+          if-no-files-found: error
+          retention-days: 30
