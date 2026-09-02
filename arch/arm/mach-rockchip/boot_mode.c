@@ -41,9 +41,14 @@ void set_back_to_bootrom_dnl_flag(void)
 __weak int rockchip_dnl_key_pressed(void)
 {
 	/*
-	 * Factory Recovery / volume-up = SARADC channel 2 (adc-keys), near 0V pressed.
-	 * Do NOT use the old ch1 raw 0..30 heuristic: with working vref it false-triggers
-	 * "download key pressed...resetting" reboot loops on idle.
+	 * Z96A: rely ONLY on the adc-keys BUTTON driver, whose thresholds
+	 * come from the DT (press 0.14-0.17V, keyup 1.2-1.4V, SARADC ch2).
+	 *
+	 * Do NOT use a raw-ADC fallback here. On Z96A the idle ch2 line
+	 * reads raw ~13 (~0V, floating), so any "raw <= N means pressed"
+	 * heuristic false-triggers on every normal boot and loops in
+	 * "download key pressed ... resetting". The press band on the
+	 * divider ladder is raw ~80-97, NOT near zero.
 	 */
 #if CONFIG_IS_ENABLED(BUTTON)
 	{
@@ -61,29 +66,9 @@ __weak int rockchip_dnl_key_pressed(void)
 		}
 	}
 #endif
-#if CONFIG_IS_ENABLED(ADC)
-	{
-		unsigned int raw = ~0U;
-		int ret;
-
-		ret = adc_channel_single_shot("saradc", 2, &raw);
-		if (ret)
-			ret = adc_channel_single_shot("saradc@fe720000", 2, &raw);
-		if (ret) {
-			debug("%s: ch2 read fail %d\n", __func__, ret);
-			return false;
-		}
-		/* ~0V on 1.8V SARADC => small raw; factory used ~0x09 */
-		if (raw <= 40) {
-			printf("dnl-key: saradc ch2 raw=%u (Recovery/vol-up)\n", raw);
-			return true;
-		}
-		return false;
-	}
-#else
 	return false;
-#endif
 }
+
 
 
 void rockchip_dnl_mode_check(void)
