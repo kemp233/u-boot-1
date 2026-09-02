@@ -45,32 +45,39 @@
 		regulator-max-microvolt = <1800000>;
 	};
 
-	/* Factory/armbian U-Boot extract: adc-keys on SARADC ch0 */
+	/* Z96A volume-up key (also Recovery on case silkscreen).
+	 * Wiring per Android stock factory DTB (workspace/z96a-extract/
+	 * 233-analysis/dts/boot-0.dts): SARADC ch2, keyup range
+	 * 1.20..1.40 V, press range 0.14..0.17 V.  rockchip adc-keys
+	 * driver supports -min/-max variants of both thresholds.
+	 */
 	adc-keys {
 		compatible = "adc-keys";
-		io-channels = <&saradc 0>;
+		io-channels = <&saradc 2>;
 		io-channel-names = "buttons";
-		keyup-threshold-microvolt = <1800000>;
+		keyup-threshold-microvolt-min = <1200000>;
+		keyup-threshold-microvolt-max = <1400000>;
 		status = "okay";
 		bootph-all;
 
-		/* Factory: label "volume up", near-0V = pressed (0x09 uV) */
-		volumeup-key {
+		/* Factory: label "volume up", ~0.14-0.17 V = pressed */
+		vol-up-key {
 			label = "volume up";
 			linux,code = <KEY_VOLUMEUP>;
-			press-threshold-microvolt = <1750>;
+			press-threshold-microvolt-min = <140000>;
+			press-threshold-microvolt-max = <170000>;
 			bootph-all;
 		};
 
 		/*
-		 * Same electrical key often silkscreened Recovery on the case.
-		 * Keep a recovery-named node for clarity (same ch0 threshold).
-		 * If hardware uses a second ADC ladder tap, adjust channel/threshold.
+		 * Same electrical key, often silkscreened Recovery on the case.
+		 * Keep a recovery-named node for clarity (same ch2 thresholds).
 		 */
 		button-recovery {
 			label = "Recovery";
 			linux,code = <KEY_VENDOR>;
-			press-threshold-microvolt = <1750>;
+			press-threshold-microvolt-min = <140000>;
+			press-threshold-microvolt-max = <170000>;
 			bootph-all;
 		};
 	};
