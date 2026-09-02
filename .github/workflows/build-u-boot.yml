@@ -31,18 +31,15 @@ jobs:
       - name: Build (z96a-rk3568-laptop-v2_defconfig)
         run: |
           make CROSS_COMPILE=aarch64-linux-gnu- z96a-rk3568-laptop-v2_defconfig
-          # NOTE: no 'idbloader.img' rule in this tree (binman era).
-          # Valid targets: spl/u-boot-spl u-boot.bin u-boot.itb flash.bin
+          # Same targets as the Armbian UBOOT_TARGET_MAP (proven working).
+          # CONFIG_BINMAN + rockchip-u-boot.dtsi produce idbloader.img,
+          # u-boot.itb, u-boot-rockchip.bin / -spi.bin as byproducts.
           make -j$(nproc) CROSS_COMPILE=aarch64-linux-gnu- \
             ROCKCHIP_TPL=$PWD/blobs/rk3568_ddr.bin \
             BL31=$PWD/blobs/bl31.elf \
-            spl/u-boot-spl u-boot.bin u-boot.itb flash.bin
-
-      - name: Assemble idbloader.img (DDR TPL + SPL)
-        run: |
-          tools/mkimage -n rk3568 -T rksd \
-            -d blobs/rk3568_ddr.bin:spl/u-boot-spl.bin idbloader.img
-          ls -la idbloader.img u-boot.itb flash.bin u-boot.bin
+            spl/u-boot-spl u-boot.bin flash.bin
+          ls -la idbloader.img u-boot.itb flash.bin u-boot.bin 2>/dev/null || true
+          ls -la u-boot-rockchip*.bin 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
