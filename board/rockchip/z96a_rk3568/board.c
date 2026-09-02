@@ -12,6 +12,7 @@
  * rest of U-Boot: errors print a diagnostic and return 0.
  */
 
+#include <adc.h>
 #include <dm.h>
 #include <dm/device.h>
 #include <dm/uclass.h>
@@ -69,6 +70,38 @@ static int sc8886_update16(struct udevice *chip, u8 reg, u16 mask, u16 val)
 	buf[1] = (cur >> 8) & 0xff;
 
 	return dm_i2c_write(chip, reg, buf, 2);
+}
+
+/*
+ * Z96A volume-up / Recovery key: SARADC ch2 divider tap, INVERTED idle.
+ * Pressed ~0.14-0.17 V (raw 80-97 @1.8 V / 10-bit); unpressed floats
+ * near 0 V (measured raw ~13). The generic adc-keys BUTTON driver
+ * cannot express this (its press band always includes 0 V) and its
+ * plain keyup/press parsing rejects the factory -min/-max DT, so
+ * override the weak rockchip_dnl_key_pressed() with a direct band
+ * check on ch2.
+ */
+int rockchip_dnl_key_pressed(void)
+{
+	unsigned int raw = ~0U;
+	int ret;
+
+	if (!of_machine_is_compatible("sunniwell,z96a-rk3568-laptop-v2"))
+		return false;
+
+	ret = adc_channel_single_shot("saradc", 2, &raw);
+	if (ret) {
+		debug("%s: saradc ch2 read fail %d\n", __func__, ret);
+		return false;
+	}
+
+	printf("dnl-key: saradc ch2 raw=%u\n", raw);
+	if (raw >= 70 && raw <= 110) {
+		printf("dnl-key: volume-up/Recovery pressed (raw=%u)\n", raw);
+		return true;
+	}
+
+	return false;
 }
 
 int rk_board_late_init(void)
