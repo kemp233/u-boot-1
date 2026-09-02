@@ -28,6 +28,7 @@
 #define SC8886_ADCIBAT		0x26	/* bit[6:0] OUTPUT_BAT_VOL */
 #define SC8886_CHARGE_OPTION0	0x12	/* bit15 EN_LWPWR */
 #define SC8886_CHARGE_OPTION2	0x32	/* bit12 EN_OTG */
+#define SC8886_CHARGE_CURRENT	0x14	/* bits[12:6], 64 mA LSB */
 
 #define SC8886_AC_STAT		BIT(15)
 #define SC8886_BAT_REMOV	BIT(1)
@@ -155,8 +156,16 @@ int rk_board_late_init(void)
 				SC8886_EN_OTG, 0);
 		sc8886_update16(chip, SC8886_CHARGE_OPTION0,
 				SC8886_EN_LWPWR, 0);
+		/*
+		 * Factory DT charges at 1 A (bq25700/SC8886 reg 0x14,
+		 * bits[12:6], 64 mA LSB). The kernel charger driver is
+		 * disabled in the z96a DTB, so the chip would charge at
+		 * its power-on default and sag VSYS with the adapter
+		 * plugged, which killed the NIC behind the OTG controller.
+		 */
+		sc8886_update16(chip, SC8886_CHARGE_CURRENT, 0x7f00, 0x0400);
 		env_set("z96a_power_src", "usb-c");
-		printf("z96a-pwr: source=USB-C (C port preferred)\n");
+		printf("z96a-pwr: source=USB-C, charge current 1024 mA\n");
 	} else if (!bat_removed && bat_mv >= SC8886_BAT_OK_MV) {
 		/* No C port but battery usable: full power on battery */
 		sc8886_update16(chip, SC8886_CHARGE_OPTION2,
