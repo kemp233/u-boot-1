@@ -21,6 +21,7 @@
 #ifndef __ASSEMBLY__
 int setup_boot_mode(void);
 void rockchip_dnl_mode_check(void);
+int rockchip_dnl_early_check(void);
 #endif
 
 #endif

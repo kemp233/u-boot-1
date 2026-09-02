@@ -202,8 +202,16 @@ int board_late_init(void)
 
 int board_init(void)
 {
-	/* Factory Recovery/volume-up: check early, not only board_late_init */
-	rockchip_dnl_mode_check();
+	/*
+	 * Do NOT call rockchip_dnl_mode_check() here: console/env/CLI are
+	 * not up yet and its ADC/BUTTON reads trigger full DM I2C/SARADC
+	 * probe, which on Z96A (and similar boards) hangs or slows the
+	 * main boot path to a crawl. The real check is deferred to
+	 * setup_boot_mode() via the weak rockchip_dnl_early_check()
+	 * hook below; boards that need a very-early check can override
+	 * it without touching DM devices.
+	 */
+	rockchip_dnl_early_check();
 	return 0;
 }
 
