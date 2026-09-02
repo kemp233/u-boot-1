@@ -155,32 +155,27 @@
 		io-channel-names = "buttons";
 		keyup-threshold-microvolt = <1800000>;
 		poll-interval = <100>;
-		u-boot,dm-spl;
 		status = "okay";
 
 		back-key {
-			u-boot,dm-spl;
 			label = "back";
 			linux,code = <KEY_BACK>;
 			press-threshold-microvolt = <1305500>;
 		};
 
 		menu-key {
-			u-boot,dm-spl;
 			label = "menu";
 			linux,code = <KEY_MENU>;
 			press-threshold-microvolt = <980000>;
 		};
 
 		vol-down-key {
-			u-boot,dm-spl;
 			label = "volume down";
 			linux,code = <KEY_VOLUMEDOWN>;
 			press-threshold-microvolt = <297500>;
 		};
 
 		vol-up-key {
-			u-boot,dm-spl;
 			label = "volume up";
 			linux,code = <KEY_VOLUMEUP>;
 			press-threshold-microvolt = <1750>;
@@ -237,7 +232,6 @@
 
 /* SARADC — vref from RK809 LDO_REG7 (vcca_1v8), needed by adc-keys above */
 &saradc {
-	u-boot,dm-spl;
 	vref-supply = <&vcca_1v8>;
 	status = "okay";
 };
