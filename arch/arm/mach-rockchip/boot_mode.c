@@ -41,7 +41,7 @@ void set_back_to_bootrom_dnl_flag(void)
 __weak int rockchip_dnl_key_pressed(void)
 {
 	/*
-	 * Factory Recovery / volume-up = SARADC channel 0 (adc-keys), near 0V pressed.
+	 * Factory Recovery / volume-up = SARADC channel 2 (adc-keys), near 0V pressed.
 	 * Do NOT use the old ch1 raw 0..30 heuristic: with working vref it false-triggers
 	 * "download key pressed...resetting" reboot loops on idle.
 	 */
@@ -66,16 +66,16 @@ __weak int rockchip_dnl_key_pressed(void)
 		unsigned int raw = ~0U;
 		int ret;
 
-		ret = adc_channel_single_shot("saradc", 0, &raw);
+		ret = adc_channel_single_shot("saradc", 2, &raw);
 		if (ret)
-			ret = adc_channel_single_shot("saradc@fe720000", 0, &raw);
+			ret = adc_channel_single_shot("saradc@fe720000", 2, &raw);
 		if (ret) {
-			debug("%s: ch0 read fail %d\n", __func__, ret);
+			debug("%s: ch2 read fail %d\n", __func__, ret);
 			return false;
 		}
 		/* ~0V on 1.8V SARADC => small raw; factory used ~0x09 */
 		if (raw <= 40) {
-			printf("dnl-key: saradc ch0 raw=%u (Recovery/vol-up)\n", raw);
+			printf("dnl-key: saradc ch2 raw=%u (Recovery/vol-up)\n", raw);
 			return true;
 		}
 		return false;
@@ -84,7 +84,6 @@ __weak int rockchip_dnl_key_pressed(void)
 	return false;
 #endif
 }
-
 
 
 void rockchip_dnl_mode_check(void)
