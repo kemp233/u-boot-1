@@ -18,7 +18,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-aarch64-linux-gnu device-tree-compiler \
-            python3-pyelftools swig libssl-dev bc bison flex u-boot-tools
+            python3-pyelftools swig libssl-dev libgnutls28-dev bc bison flex u-boot-tools
 
       - name: Fetch Z96A firmware blobs (DDR TPL + BL31)
         run: |
