@@ -17,12 +17,12 @@
  * source choice; its input is VSYS and it stays enabled regardless.
  */
 
+#include <common.h>
 #include <dm.h>
 #include <dm/device.h>
 #include <dm/uclass.h>
 #include <i2c.h>
 #include <env.h>
-#include <log.h>
 #include <linux/bitops.h>
 
 #define SC8886_I2C_BUS		"i2c@fdd40000"
