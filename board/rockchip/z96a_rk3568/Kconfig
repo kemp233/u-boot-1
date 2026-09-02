@@ -1,0 +1,12 @@
+if TARGET_Z96A_RK3568
+
+config SYS_BOARD
+	default "z96a_rk3568"
+
+config SYS_VENDOR
+	default "rockchip"
+
+config SYS_CONFIG_NAME
+	default "z96a_rk3568"
+
+endif

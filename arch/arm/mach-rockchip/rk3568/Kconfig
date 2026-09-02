@@ -8,6 +8,15 @@ config TARGET_EVB_RK3568
 	help
 	  RK3568 EVB is a evaluation board for Rockchp RK3568.
 
+config TARGET_Z96A_RK3568
+	bool "Sunniwell Z96A laptop v2 (RK3568)"
+	help
+	  Sunniwell Z96A RK3568 laptop v2. Uses an independent board
+	  directory (board/rockchip/z96a_rk3568/) instead of
+	  board/rockchip/evb_rk3568/ so z96a-specific late-init code
+	  (SC8886 charger, vdd_npu 0.9V init, etc.) does not share
+	  source files with the generic RK3568 evaluation board.
+
 config TARGET_ANBERNIC_RGXX3_RK3566
 	bool "Anbernic RGXX3"
 	help

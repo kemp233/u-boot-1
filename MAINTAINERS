@@ -1965,6 +1965,13 @@ M:	Roger Knecht <rknecht@pm.me>
 S:	Maintained
 F:	cmd/xxd.c
 F:	doc/usage/cmd/xxd.rst
+
+Z96A RK3568 LAPTOP V2
+M:	kemp233 <kemp233@users.noreply.github.com>
+S:	Maintained
+F:	board/rockchip/z96a_rk3568/
+F:	configs/z96a-rk3568-laptop-v2_defconfig
+F:	arch/arm/mach-rockchip/rk3568/Kconfig
 F:	test/py/tests/test_xxd/
 
 THE REST
