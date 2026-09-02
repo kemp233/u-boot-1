@@ -38,18 +38,6 @@ void set_back_to_bootrom_dnl_flag(void)
 #define KEY_DOWN_MIN_VAL	0
 #define KEY_DOWN_MAX_VAL	30
 
-__weak int rockchip_dnl_early_check(void)
-{
-	/*
-	 * Called from board_init(): this MUST NOT touch any DM device
-	 * (ADC/BUTTON I2C/SARADC probes are deferred). The default
-	 * implementation does nothing; the full check is performed later
-	 * in setup_boot_mode() via rockchip_dnl_mode_check(), where
-	 * DM/console/env are all up.
-	 */
-	return 0;
-}
-
 __weak int rockchip_dnl_key_pressed(void)
 {
 	/*
