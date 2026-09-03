@@ -87,16 +87,17 @@ int rockchip_dnl_key_pressed(void)
 	unsigned int raw = ~0U;
 	int ret;
 
-	if (!of_machine_is_compatible("sunniwell,z96a-rk3568-laptop-v2"))
-		return false;
-
+	/* Instrumented: every step prints, so one boot log localizes a
+	 * silent failure (compatible match, ADC probe, or the band). */
 	ret = adc_channel_single_shot("saradc", 2, &raw);
-	if (ret) {
-		debug("%s: saradc ch2 read fail %d\n", __func__, ret);
+	if (ret)
+		ret = adc_channel_single_shot("saradc@fe720000", 2, &raw);
+	printf("dnl-key: comp=%d adc_ret=%d raw=%u\n",
+	       of_machine_is_compatible("sunniwell,z96a-rk3568-laptop-v2"),
+	       ret, raw);
+	if (ret)
 		return false;
-	}
 
-	printf("dnl-key: saradc ch2 raw=%u\n", raw);
 	if (raw >= 70 && raw <= 110) {
 		printf("dnl-key: volume-up/Recovery pressed (raw=%u)\n", raw);
 		return true;
