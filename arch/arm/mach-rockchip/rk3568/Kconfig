@@ -80,6 +80,7 @@ config SYS_SOC
 	default "rk3568"
 
 source "board/rockchip/evb_rk3568/Kconfig"
+source "board/rockchip/z96a_rk3568/Kconfig"
 source "board/anbernic/rgxx3_rk3566/Kconfig"
 source "board/hardkernel/odroid_m1/Kconfig"
 source "board/hardkernel/odroid_m1s/Kconfig"
