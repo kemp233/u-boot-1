@@ -29,6 +29,12 @@
 #define SC8886_CHARGE_OPTION0	0x12	/* bit15 EN_LWPWR */
 #define SC8886_CHARGE_OPTION2	0x32	/* bit12 EN_OTG */
 #define SC8886_CHARGE_CURRENT	0x14	/* bits[12:6], 64 mA LSB */
+#define SC8886_PROCHOT_OPT0	0x36	/* VSYS_VTH/ICRIT_DEG/PROCHOT_WIDTH */
+#define SC8886_PROCHOT_OPT1	0x37	/* IBAT short / VSYS_REG thresholds */
+
+/* factory values from SC8886 register dump (before any host writes) */
+#define SC8886_PROCHOT_OPT0_VAL	0x65
+#define SC8886_PROCHOT_OPT1_VAL	0x4a
 
 #define SC8886_AC_STAT		BIT(15)
 #define SC8886_BAT_REMOV	BIT(1)
@@ -54,6 +60,11 @@ static int sc8886_read16(struct udevice *chip, u8 reg, u16 *val)
 
 	*val = buf[0] | (buf[1] << 8);
 	return 0;
+}
+
+static int sc8886_write8(struct udevice *chip, u8 reg, u8 val)
+{
+	return dm_i2c_write(chip, reg, &val, 1);
 }
 
 static int sc8886_update16(struct udevice *chip, u8 reg, u16 mask, u16 val)
@@ -142,6 +153,15 @@ int rk_board_late_init(void)
 		       "skipping power-source selection\n");
 		return 0;
 	}
+
+	/*
+	 * Restore PROCHOT thresholds to factory values.  Without this the
+	 * VSYS_VTH field (0x36 bits[7:5]) may power up at its lowest setting,
+	 * making PROCHOT fire on every I2C bus transient and blocking charge.
+	 * Factory values measured on a healthy Z96A v2: 0x36=0x65, 0x37=0x4A.
+	 */
+	sc8886_write8(chip, SC8886_PROCHOT_OPT0, SC8886_PROCHOT_OPT0_VAL);
+	sc8886_write8(chip, SC8886_PROCHOT_OPT1, SC8886_PROCHOT_OPT1_VAL);
 
 	ac_present = !!(status & SC8886_AC_STAT);
 	bat_removed = !!(prochot & SC8886_BAT_REMOV);
