@@ -48,15 +48,16 @@
 	/* Z96A volume-up key (also Recovery on case silkscreen).
 	 * Wiring per Android stock factory DTB (workspace/z96a-extract/
 	 * 233-analysis/dts/boot-0.dts): SARADC ch2, keyup range
-	 * 1.20..1.40 V, press range 0.14..0.17 V.  rockchip adc-keys
-	 * driver supports -min/-max variants of both thresholds.
+	 * 1.20..1.40 V, press range 0.14..0.17 V.  u-boot button-adc.c
+	 * only parses the standard single-value properties, so we ship
+	 * the midpoints of the factory ranges (raw 80-97 pressed on the
+	 * 1.8V/10-bit divider).
 	 */
 	adc-keys {
 		compatible = "adc-keys";
 		io-channels = <&saradc 2>;
 		io-channel-names = "buttons";
-		keyup-threshold-microvolt-min = <1200000>;
-		keyup-threshold-microvolt-max = <1400000>;
+		keyup-threshold-microvolt = <1300000>;
 		status = "okay";
 		bootph-all;
 
@@ -64,8 +65,7 @@
 		vol-up-key {
 			label = "volume up";
 			linux,code = <KEY_VOLUMEUP>;
-			press-threshold-microvolt-min = <140000>;
-			press-threshold-microvolt-max = <170000>;
+			press-threshold-microvolt = <155000>;
 			bootph-all;
 		};
 
@@ -76,8 +76,7 @@
 		button-recovery {
 			label = "Recovery";
 			linux,code = <KEY_VENDOR>;
-			press-threshold-microvolt-min = <140000>;
-			press-threshold-microvolt-max = <170000>;
+			press-threshold-microvolt = <155000>;
 			bootph-all;
 		};
 	};
