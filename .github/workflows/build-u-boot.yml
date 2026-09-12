@@ -23,9 +23,11 @@ jobs:
       - name: Fetch Z96A firmware blobs (DDR TPL + BL31)
         run: |
           mkdir -p blobs
-          base="https://raw.githubusercontent.com/kemp233/armbian-build-sunniwell-Z96a/main/packages/blobs/rk35"
-          curl -fsSL "$base/rk3568_ddr_1184MHz_android5042_z96a.bin" -o blobs/rk3568_ddr.bin
-          curl -fsSL "$base/rk3568_bl31_v1.43.elf"              -o blobs/bl31.elf
+          # Blobs moved to custom/ subtree in armbian-build-sunniwell-Z96a
+          # da36275e2 (2026-09-09). Old packages/blobs path 404s for bl31.
+          base="https://raw.githubusercontent.com/kemp233/armbian-build-sunniwell-Z96a/main/custom/packages/blobs/rk35"
+          curl -fsSL --retry 3 "$base/rk3568_ddr_1184MHz_android5042_z96a.bin" -o blobs/rk3568_ddr.bin
+          curl -fsSL --retry 3 "$base/rk3568_bl31_v1.43.elf"              -o blobs/bl31.elf
           ls -la blobs/
 
       - name: Build (z96a-rk3568-laptop-v2_defconfig)
