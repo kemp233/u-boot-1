@@ -46,37 +46,41 @@
 	};
 
 	/* Z96A volume-up key (also Recovery on case silkscreen).
-	 * Wiring per Android stock factory DTB (workspace/z96a-extract/
-	 * 233-analysis/dts/boot-0.dts): SARADC ch2, keyup range
-	 * 1.20..1.40 V, press range 0.14..0.17 V.  u-boot button-adc.c
-	 * only parses the standard single-value properties, so we ship
-	 * the midpoints of the factory ranges (raw 80-97 pressed on the
-	 * 1.8V/10-bit divider).
+	 * Wiring VERIFIED on real hardware 2026-09: SARADC ch0.
+	 * The factory Android DTB (boot-0.dts) declares ch2, but the
+	 * factory Linux/loader DTB (factory.dts) and the live board both
+	 * say ch0: pressing the key pulls ch0 from 1023 (1.8 V, idle)
+	 * down to raw 127 (~0.22 V); ch2 stays at 1023 the whole time.
+	 * u-boot button-adc.c parses the standard single-value
+	 * properties, so we ship the measured values:
+	 *   idle (keyup): 1023 raw = 1.8 V  -> keyup 1800000 uV
+	 *   pressed:      127 raw = 0.223 V -> press  223000 uV
 	 */
 	adc-keys {
 		compatible = "adc-keys";
-		io-channels = <&saradc 2>;
+		io-channels = <&saradc 0>;
 		io-channel-names = "buttons";
-		keyup-threshold-microvolt = <1300000>;
+		keyup-threshold-microvolt = <1800000>;
 		status = "okay";
 		bootph-all;
 
-		/* Factory: label "volume up", ~0.14-0.17 V = pressed */
+		/* Measured: pressing pulls ch0 to ~0.223 V (raw 127) */
 		vol-up-key {
 			label = "volume up";
 			linux,code = <KEY_VOLUMEUP>;
-			press-threshold-microvolt = <155000>;
+			press-threshold-microvolt = <223000>;
 			bootph-all;
 		};
 
 		/*
-		 * Same electrical key, often silkscreened Recovery on the case.
-		 * Keep a recovery-named node for clarity (same ch2 thresholds).
+		 * Same electrical key, often silkscreened Recovery on the
+		 * case.  Keep a recovery-named node for clarity (same ch0
+		 * thresholds).
 		 */
 		button-recovery {
 			label = "Recovery";
 			linux,code = <KEY_VENDOR>;
-			press-threshold-microvolt = <155000>;
+			press-threshold-microvolt = <223000>;
 			bootph-all;
 		};
 	};
