@@ -85,13 +85,12 @@ static int sc8886_update16(struct udevice *chip, u8 reg, u16 mask, u16 val)
 }
 
 /*
- * Z96A volume-up / Recovery key: SARADC ch2 divider tap, INVERTED idle.
- * Pressed ~0.14-0.17 V (raw 80-97 @1.8 V / 10-bit); unpressed floats
- * near 0 V (measured raw ~13). The generic adc-keys BUTTON driver
- * cannot express this (its press band always includes 0 V) and its
- * plain keyup/press parsing rejects the factory -min/-max DT, so
- * override the weak rockchip_dnl_key_pressed() with a direct band
- * check on ch2.
+ * Z96A volume-up / Recovery key: SARADC ch0, VERIFIED on hardware
+ * 2026-09.  Idle = 1023 raw (1.8 V, full scale); pressing the key
+ * pulls ch0 down to ~127 raw (~0.223 V).  ch2 stays at 1023 the whole
+ * time (the factory Android DTB's ch2 claim does not match the real
+ * board).  Band 90..200 covers the measured press point with margin
+ * and is far from both the idle 1023 and the unused-channel 0.
  */
 int rockchip_dnl_key_pressed(void)
 {
@@ -100,16 +99,16 @@ int rockchip_dnl_key_pressed(void)
 
 	/* Instrumented: every step prints, so one boot log localizes a
 	 * silent failure (compatible match, ADC probe, or the band). */
-	ret = adc_channel_single_shot("saradc", 2, &raw);
+	ret = adc_channel_single_shot("saradc", 0, &raw);
 	if (ret)
-		ret = adc_channel_single_shot("saradc@fe720000", 2, &raw);
+		ret = adc_channel_single_shot("saradc@fe720000", 0, &raw);
 	printf("dnl-key: comp=%d adc_ret=%d raw=%u\n",
 	       of_machine_is_compatible("sunniwell,z96a-rk3568-laptop-v2"),
 	       ret, raw);
 	if (ret)
 		return false;
 
-	if (raw >= 70 && raw <= 110) {
+	if (raw >= 90 && raw <= 200) {
 		printf("dnl-key: volume-up/Recovery pressed (raw=%u)\n", raw);
 		return true;
 	}
