@@ -14,11 +14,12 @@
 
 #include <adc.h>
 #include <asm/io.h>
-#include <common.h>
 #include <dm.h>
 #include <dm/device.h>
 #include <dm/uclass.h>
 #include <env.h>
+#include <linux/delay.h>
+#include <time.h>
 #include <i2c.h>
 #include <log.h>
 
