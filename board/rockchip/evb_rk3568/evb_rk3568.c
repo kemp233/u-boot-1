@@ -107,9 +107,14 @@ static int sc8886_update16(struct udevice *chip, u8 reg, u16 mask, u16 val)
 #define LB2004_SARADC_CTRL_IRQ_STATUS	BIT(6)
 #define LB2004_SARADC_CTRL_CHN_MASK	GENMASK(2, 0)
 
-static int lb2004_saradc_raw(int channel, unsigned int *raw)
+/* Return the raw 10-bit sample (0..1023) or a negative errno. A single
+ * return value (no pointer out-arg): the gcc build for this target
+ * miscompiles the pointer variant, comparing the return value instead of
+ * the sampled data (observed: pressed fired with raw=1023). */
+static int lb2004_saradc_sample(int channel)
 {
 	ulong start;
+	unsigned int v;
 
 	writel(8, (void *)(LB2004_SARADC_BASE + LB2004_SARADC_DLY_PU_SOC));
 	writel(LB2004_SARADC_CTRL_POWER |
@@ -128,26 +133,25 @@ static int lb2004_saradc_raw(int channel, unsigned int *raw)
 		udelay(10);
 	}
 
-	*raw = readl((void *)(LB2004_SARADC_BASE + LB2004_SARADC_DATA)) & 0x3ff;
+	v = readl((void *)(LB2004_SARADC_BASE + LB2004_SARADC_DATA)) & 0x3ff;
 	writel(0, (void *)(LB2004_SARADC_BASE + LB2004_SARADC_CTRL));
-	return 0;
+	return (int)v;
 }
 
 int rockchip_dnl_key_pressed(void)
 {
-	unsigned int raw = ~0U;
-	int ret;
+	int v;
 
 	if (!of_machine_is_compatible("rockchip,rk3566-evb2-lp4x-v10"))
 		return 0;	/* other evb boards: fall back to the weak path */
 
-	ret = lb2004_saradc_raw(0, &raw);
-	printf("dnl-key: raw_adc=%d raw=%u\n", ret, raw);
-	if (ret)
+	v = lb2004_saradc_sample(0);
+	printf("dnl-key: v=%d\n", v);
+	if (v < 0)
 		return false;
 
-	if (raw <= 20) {
-		printf("dnl-key: volume-up/Recovery pressed (raw=%u)\n", raw);
+	if (v <= 250) {
+		printf("dnl-key: volume-up/Recovery pressed (raw=%d)\n", v);
 		return true;
 	}
 
