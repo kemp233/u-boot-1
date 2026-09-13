@@ -13,6 +13,8 @@
  */
 
 #include <adc.h>
+#include <asm/io.h>
+#include <common.h>
 #include <dm.h>
 #include <dm/device.h>
 #include <dm/uclass.h>
@@ -91,20 +93,58 @@ static int sc8886_update16(struct udevice *chip, u8 reg, u16 mask, u16 val)
  * time (the factory Android DTB's ch2 claim does not match the real
  * board).  Band 90..200 covers the measured press point with margin
  * and is far from both the idle 1023 and the unused-channel 0.
+ *
+ * 2017-vendor-style RAW REGISTER read: no DM, no clk/regulator subsystem.
+ * The SARADC block works on reset-default gate clocks (the vendor 2017
+ * U-Boot relied on exactly this), so a direct register poke is immune to
+ * any DM probe failure that silently killed the adc_channel_single_shot()
+ * path. Register layout mirrors drivers/adc/rockchip-saradc.c v1.
  */
+#define Z96A_SARADC_BASE		0xfe720000
+#define Z96A_SARADC_DATA		0x00
+#define Z96A_SARADC_CTRL		0x08
+#define Z96A_SARADC_DLY_PU_SOC		0x0c
+#define Z96A_SARADC_CTRL_POWER		BIT(3)
+#define Z96A_SARADC_CTRL_IRQ_ENABLE	BIT(5)
+#define Z96A_SARADC_CTRL_IRQ_STATUS	BIT(6)
+#define Z96A_SARADC_CTRL_CHN_MASK	GENMASK(2, 0)
+
+static int z96a_saradc_raw(int channel, unsigned int *raw)
+{
+	ulong start;
+
+	/* 8 clock periods between power-up and start command */
+	writel(8, (void *)(Z96A_SARADC_BASE + Z96A_SARADC_DLY_PU_SOC));
+	writel(Z96A_SARADC_CTRL_POWER | (channel & Z96A_SARADC_CTRL_CHN_MASK) |
+	       Z96A_SARADC_CTRL_IRQ_ENABLE,
+	       (void *)(Z96A_SARADC_BASE + Z96A_SARADC_CTRL));
+
+	start = get_timer(0);
+	while (!(readl((void *)(Z96A_SARADC_BASE + Z96A_SARADC_CTRL)) &
+		 Z96A_SARADC_CTRL_IRQ_STATUS)) {
+		if (get_timer(start) > 20) {
+			writel(0, (void *)(Z96A_SARADC_BASE + Z96A_SARADC_CTRL));
+			return -ETIMEDOUT;
+		}
+		udelay(10);
+	}
+
+	*raw = readl((void *)(Z96A_SARADC_BASE + Z96A_SARADC_DATA)) & 0x3ff;
+
+	/* power the block back down */
+	writel(0, (void *)(Z96A_SARADC_BASE + Z96A_SARADC_CTRL));
+	return 0;
+}
+
 int rockchip_dnl_key_pressed(void)
 {
 	unsigned int raw = ~0U;
 	int ret;
 
 	/* Instrumented: every step prints, so one boot log localizes a
-	 * silent failure (compatible match, ADC probe, or the band). */
-	ret = adc_channel_single_shot("saradc", 0, &raw);
-	if (ret)
-		ret = adc_channel_single_shot("saradc@fe720000", 0, &raw);
-	printf("dnl-key: comp=%d adc_ret=%d raw=%u\n",
-	       of_machine_is_compatible("sunniwell,z96a-rk3568-laptop-v2"),
-	       ret, raw);
+	 * silent failure. */
+	ret = z96a_saradc_raw(0, &raw);
+	printf("dnl-key: raw_adc=%d raw=%u\n", ret, raw);
 	if (ret)
 		return false;
 
