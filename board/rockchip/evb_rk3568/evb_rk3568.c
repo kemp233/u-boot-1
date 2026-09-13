@@ -152,7 +152,19 @@ int rockchip_dnl_key_pressed(void)
 
 	if (v <= 250) {
 		printf("dnl-key: volume-up/Recovery pressed (raw=%d)\n", v);
-		return true;
+		/*
+		 * BootROM download: write the magic to PMU_GRF OS_REG2
+		 * (0xFDC20200, same register/value the vendor 2017 U-Boot
+		 * used) and issue a WARM (second global soft) reset via the
+		 * CRU.  do_reset() here goes through PSCI/BL31 whose cold
+		 * reset wipes PMU_GRF, losing the flag before the BootROM
+		 * ever sees it - the board just rebooted normally.  The
+		 * warm reset (CRU glb_srst_snd, 0xeca8 @ 0xFDD200D8)
+		 * preserves PMU_GRF, so the BootROM enters download mode.
+		 */
+		writel(0xEF08A53C, 0xFDC20200);
+		writel(0xeca8, 0xFDD200D8);
+		return true;	/* not reached */
 	}
 
 	return false;

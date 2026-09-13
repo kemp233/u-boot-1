@@ -151,7 +151,12 @@ int rockchip_dnl_key_pressed(void)
 
 	if (raw >= 90 && raw <= 200) {
 		printf("dnl-key: volume-up/Recovery pressed (raw=%u)\n", raw);
-		return true;
+		/* BootROM download via PMU_GRF OS_REG2 + WARM reset (see the
+		 * LB2004 note in evb_rk3568.c: a PSCI cold reset loses the
+		 * flag, so the board just rebooted normally). */
+		writel(0xEF08A53C, 0xFDC20200);
+		writel(0xeca8, 0xFDD200D8);
+		return true;	/* not reached */
 	}
 
 	return false;
