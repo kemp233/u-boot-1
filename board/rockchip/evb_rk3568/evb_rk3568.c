@@ -23,6 +23,9 @@
 #include <i2c.h>
 #include <env.h>
 #include <linux/bitops.h>
+#include <asm/io.h>
+#include <linux/delay.h>
+#include <time.h>
 #include <log.h>
 
 #define SC8886_I2C_BUS		"i2c@fdd40000"
@@ -79,6 +82,76 @@ static int sc8886_update16(struct udevice *chip, u8 reg, u16 mask, u16 val)
 	buf[1] = (cur >> 8) & 0xff;
 
 	return dm_i2c_write(chip, reg, buf, 2);
+}
+
+/*
+ * LB2004 (compatible "rockchip,rk3566-evb2-lp4x-v10") volume-up key =
+ * Recovery/Loader: SARADC ch0, factory 4-key ladder (vol-up 1750uV,
+ * vol-down 297500uV, menu 980000uV, back 1305500uV, keyup 1.8V).
+ *
+ * 2017-vendor-style RAW REGISTER read - no DM, no clk/regulator probe
+ * chain. The BUTTON-framework path failed silently on this board because
+ * the shipped control DTB had adc-keys status="disabled"; this direct
+ * register poke works on reset-default gate clocks (exactly what the
+ * vendor 2017 U-Boot relied on).  Pressed vol-up = ~1.7uV = raw ~1;
+ * band raw <= 20 (~35mV) stays far below vol-down (raw ~169) and idle
+ * (top of ladder, raw ~940), so it cannot false-trigger on other keys
+ * or at idle.
+ */
+#define LB2004_SARADC_BASE		0xfe720000
+#define LB2004_SARADC_DATA		0x00
+#define LB2004_SARADC_CTRL		0x08
+#define LB2004_SARADC_DLY_PU_SOC	0x0c
+#define LB2004_SARADC_CTRL_POWER	BIT(3)
+#define LB2004_SARADC_CTRL_IRQ_ENABLE	BIT(5)
+#define LB2004_SARADC_CTRL_IRQ_STATUS	BIT(6)
+#define LB2004_SARADC_CTRL_CHN_MASK	GENMASK(2, 0)
+
+static int lb2004_saradc_raw(int channel, unsigned int *raw)
+{
+	ulong start;
+
+	writel(8, (void *)(LB2004_SARADC_BASE + LB2004_SARADC_DLY_PU_SOC));
+	writel(LB2004_SARADC_CTRL_POWER |
+	       (channel & LB2004_SARADC_CTRL_CHN_MASK) |
+	       LB2004_SARADC_CTRL_IRQ_ENABLE,
+	       (void *)(LB2004_SARADC_BASE + LB2004_SARADC_CTRL));
+
+	start = get_timer(0);
+	while (!(readl((void *)(LB2004_SARADC_BASE + LB2004_SARADC_CTRL)) &
+		 LB2004_SARADC_CTRL_IRQ_STATUS)) {
+		if (get_timer(start) > 20) {
+			writel(0, (void *)(LB2004_SARADC_BASE +
+					   LB2004_SARADC_CTRL));
+			return -ETIMEDOUT;
+		}
+		udelay(10);
+	}
+
+	*raw = readl((void *)(LB2004_SARADC_BASE + LB2004_SARADC_DATA)) & 0x3ff;
+	writel(0, (void *)(LB2004_SARADC_BASE + LB2004_SARADC_CTRL));
+	return 0;
+}
+
+int rockchip_dnl_key_pressed(void)
+{
+	unsigned int raw = ~0U;
+	int ret;
+
+	if (!of_machine_is_compatible("rockchip,rk3566-evb2-lp4x-v10"))
+		return 0;	/* other evb boards: fall back to the weak path */
+
+	ret = lb2004_saradc_raw(0, &raw);
+	printf("dnl-key: raw_adc=%d raw=%u\n", ret, raw);
+	if (ret)
+		return false;
+
+	if (raw <= 20) {
+		printf("dnl-key: volume-up/Recovery pressed (raw=%u)\n", raw);
+		return true;
+	}
+
+	return false;
 }
 
 int rk_board_late_init(void)

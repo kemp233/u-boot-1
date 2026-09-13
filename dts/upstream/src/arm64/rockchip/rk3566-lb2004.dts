@@ -710,9 +710,10 @@
 &pwm15 { status = "disabled"; };
 &pwm16_32k { status = "disabled"; };
 
-/* ADC keys */
+/* ADC keys - REQUIRED for the Recovery/Loader key (U-Boot samples it
+ * at boot; leaving it disabled killed key detection entirely) */
 &adc_keys {
-	status = "disabled";
+	status = "okay";
 };
 
 /* GPIO keys */
