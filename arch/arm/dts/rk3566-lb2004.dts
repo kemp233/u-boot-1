@@ -10,7 +10,10 @@
  *
  * ADC key ladder (SARADC ch0):
  *   volumeup-key, label "volume up", press-threshold-microvolt = <9>
- *   = ~0V on 1.8V SARADC => raw <= 9 => rockchip_dnl_key_pressed() returns 1
+ *   Measured on a working Debian LB2004 (2026-09-16): idle raw = 1023
+ *   (1.8 V full scale), pressed raw = 19..23 (~0.035 V).
+ *   rockchip_dnl_key_pressed() in board/rockchip/lb2004_rk3566/board.c
+ *   uses raw < 100 as the press band (wide margins on both sides).
  *   => rockchip_dnl_mode_check() => BOOT_BROM_DOWNLOAD (maskrom/rockusb)
  */
 

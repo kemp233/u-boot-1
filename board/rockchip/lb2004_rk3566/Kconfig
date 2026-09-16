@@ -1,0 +1,12 @@
+if TARGET_LB2004_RK3566
+
+config SYS_BOARD
+	default "lb2004_rk3566"
+
+config SYS_VENDOR
+	default "rockchip"
+
+config SYS_CONFIG_NAME
+	default "lb2004_rk3566"
+
+endif

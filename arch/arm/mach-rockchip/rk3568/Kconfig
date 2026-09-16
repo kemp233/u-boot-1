@@ -17,6 +17,14 @@ config TARGET_Z96A_RK3568
 	  (SC8886 charger, vdd_npu 0.9V init, etc.) does not share
 	  source files with the generic RK3568 evaluation board.
 
+config TARGET_LB2004_RK3566
+	bool "LB2004 (RK3566)"
+	help
+	  LB2004 RK3566 board. Uses an independent board directory
+	  (board/rockchip/lb2004_rk3566/) so the Recovery/Loader key
+	  detection - measured on this board, SARADC ch0, press raw ~20 -
+	  does not share thresholds with the Z96A RK3568 board.
+
 config TARGET_ANBERNIC_RGXX3_RK3566
 	bool "Anbernic RGXX3"
 	help
@@ -81,6 +89,7 @@ config SYS_SOC
 
 source "board/rockchip/evb_rk3568/Kconfig"
 source "board/rockchip/z96a_rk3568/Kconfig"
+source "board/rockchip/lb2004_rk3566/Kconfig"
 source "board/anbernic/rgxx3_rk3566/Kconfig"
 source "board/hardkernel/odroid_m1/Kconfig"
 source "board/hardkernel/odroid_m1s/Kconfig"
