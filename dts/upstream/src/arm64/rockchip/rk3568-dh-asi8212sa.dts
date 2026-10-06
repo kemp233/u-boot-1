@@ -41,13 +41,21 @@
 	aliases {
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac1;
-		mmc0 = &sdhci;
-		mmc1 = &sdmmc0;
+		/* TF(SD) card = mmc0: boots first in distro_bootcmd */
+		mmc0 = &sdmmc0;
+		mmc1 = &sdhci;
 		serial2 = &uart2;
 	};
 
 	chosen {
 		stdout-path = "serial2:1500000n8";
+		/*
+		 * TF(SD) boot priority: SPL looks for the FIT on the SD first
+		 * and falls back to eMMC. Note the BootROM itself always tries
+		 * eMMC before SD for idbloader, so with an eMMC-only install the
+		 * chain still boots; with an Armbian SD inserted the SD wins.
+		 */
+		u-boot,spl-boot-order = &sdmmc0, &sdhci;
 	};
 
 	/* Factory DTB: external 125MHz clocks for both GMACs */
