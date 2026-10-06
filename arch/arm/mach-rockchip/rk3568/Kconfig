@@ -25,6 +25,14 @@ config TARGET_LB2004_RK3566
 	  detection - measured on this board, SARADC ch0, press raw ~20 -
 	  does not share thresholds with the Z96A RK3568 board.
 
+config TARGET_DH_ASI8212SA
+	bool "Dahua DH-ASI8212SA (RK3568)"
+	help
+	  Dahua DH-ASI8212SA RK3568 door-station board. Uses an independent
+	  board directory (board/rockchip/dh_asi8212sa_rk3568/) so its
+	  Recovery-key band (SARADC ch0 pressing to < 9uV, from the factory
+	  U-Boot DTB) does not share thresholds with other boards.
+
 config TARGET_ANBERNIC_RGXX3_RK3566
 	bool "Anbernic RGXX3"
 	help
@@ -90,6 +98,7 @@ config SYS_SOC
 source "board/rockchip/evb_rk3568/Kconfig"
 source "board/rockchip/z96a_rk3568/Kconfig"
 source "board/rockchip/lb2004_rk3566/Kconfig"
+source "board/rockchip/dh_asi8212sa_rk3568/Kconfig"
 source "board/anbernic/rgxx3_rk3566/Kconfig"
 source "board/hardkernel/odroid_m1/Kconfig"
 source "board/hardkernel/odroid_m1s/Kconfig"

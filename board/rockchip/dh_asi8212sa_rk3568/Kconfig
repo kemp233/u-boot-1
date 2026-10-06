@@ -1,0 +1,12 @@
+if TARGET_DH_ASI8212SA
+
+config SYS_BOARD
+	default "dh_asi8212sa_rk3568"
+
+config SYS_VENDOR
+	default "rockchip"
+
+config SYS_CONFIG_NAME
+	default "dh_asi8212sa_rk3568"
+
+endif

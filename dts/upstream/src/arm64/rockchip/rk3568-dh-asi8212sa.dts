@@ -1,0 +1,257 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Dahua DH-ASI8212SA (RK3568 door-station board) — U-Boot DT
+ *
+ * Board data extracted from the factory U-Boot DTB (two copies at offset
+ * 0x1c7e00/0x3c7e00 of the uboot partition; decompiled to
+ * dh/flash_kit/uboot_config.dts). Factory values kept verbatim:
+ *
+ *   - eMMC on sdhci@fe310000: HS200, 8-bit, 200MHz max
+ *   - SD  on sdmmc0@fe2b0000: 150MHz max, card-detect GPIO0_A4 pull-up
+ *   - TF  on sdmmc1@fe2c0000: 150MHz max (stock: enabled, but never in the
+ *     SPL boot order)
+ *   - GMAC0 @fe2a0000: RGMII, clock_in_out=output, tx_delay=0x3c,
+ *     rx_delay=0x2f, PHY reset GPIO2_D3 active-low   (stock: disabled)
+ *   - GMAC1 @fe010000: RGMII M1 pins, tx_delay=0x4f, rx_delay=0x26,
+ *     PHY reset GPIO2_D1 active-low                  (stock: disabled)
+ *     -> the factory kernel DTB was never recovered, so both MACs stay
+ *        disabled until the PHY wiring is confirmed on hardware
+ *   - secure_otp@fe3a0000 OTP-fuse block (extracted verbatim):
+ *       secure_conf   = 0xfdd18008  (PMU secure GRF + 0x8)
+ *       mask_addr     = 0xfe880000  (efuse controller)
+ *       cru_rst_addr  = 0xfdd20470  (CRU + 0x470, SOFTRST con)
+ *   - Recovery/MASKROM key on SARADC ch0: pressed < 9uV (near ground)
+ *   - PMIC sits on a private I2C bus in the factory firmware; no PMIC node
+ *     here — rails come up at reset defaults set by the BootROM/loader.
+ *
+ * SoC base (CRU@fdd20000, PMUCRU@fdd00000, GRF/PMUGRF/USB2PHY-GRF,
+ * IOMMUs, power domains, OPP tables) comes from rk3568.dtsi upstream.
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio.h>
+#include "rk3568.dtsi"
+
+/ {
+	model = "Dahua DH-ASI8212SA";
+	compatible = "dahua,dh-asi8212sa", "rockchip,rk3568";
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+		mmc0 = &sdhci;
+		mmc1 = &sdmmc0;
+		serial2 = &uart2;
+	};
+
+	chosen {
+		stdout-path = "serial2:1500000n8";
+	};
+
+	/* Factory DTB: external 125MHz clocks for both GMACs */
+	gmac0_clkin: external-gmac0-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <125000000>;
+		clock-output-names = "gmac0_clkin";
+		#clock-cells = <0>;
+	};
+
+	gmac1_clkin: external-gmac1-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <125000000>;
+		clock-output-names = "gmac1_clkin";
+		#clock-cells = <0>;
+	};
+
+	vcca_1v8: regulator-vcca-1v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vcca_1v8";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+	};
+
+	/* Recovery/MASKROM key on SARADC ch0 (factory: press < 9uV) */
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		status = "okay";
+		bootph-all;
+
+		volumeup-key {
+			label = "volume up";
+			linux,code = <KEY_VOLUMEUP>;
+			press-threshold-microvolt = <9>;
+			bootph-all;
+		};
+	};
+};
+
+/* Debug console, 1.5MBaud (factory DTB: clock-frequency 24MHz) */
+&uart2 {
+	status = "okay";
+	bootph-all;
+};
+
+&saradc {
+	vref-supply = <&vcca_1v8>;
+	status = "okay";
+	bootph-all;
+};
+
+/*
+ * GMAC0 — factory values (tx 0x3c / rx 0x2f, reset GPIO2_D3).
+ * Kept disabled like the stock DTB until PHY wiring is confirmed.
+ */
+&gmac0 {
+	phy-mode = "rgmii";
+	clock_in_out = "output";
+	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
+	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>, <&gmac0_clkin>;
+	snps,reset-gpio = <&gpio2 RK_PD3 GPIO_ACTIVE_LOW>;
+	snps,reset-active-low;
+	snps,reset-delays-us = <0 20000 100000>;
+	tx_delay = <0x3c>;
+	rx_delay = <0x2f>;
+	phy-handle = <&rgmii_phy0>;
+	status = "disabled";
+};
+
+&mdio0 {
+	rgmii_phy0: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+	};
+};
+
+/*
+ * GMAC1 — factory values (M1 pins, tx 0x4f / rx 0x26, reset GPIO2_D1).
+ * Kept disabled like the stock DTB until PHY wiring is confirmed.
+ */
+&gmac1 {
+	phy-mode = "rgmii";
+	clock_in_out = "output";
+	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
+	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>, <&gmac1_clkin>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&gmac1m1_miim
+		     &gmac1m1_tx_bus2
+		     &gmac1m1_rx_bus2
+		     &gmac1m1_rgmii_clk
+		     &gmac1m1_clkinout
+		     &gmac1m1_rgmii_bus>;
+	snps,reset-gpio = <&gpio2 RK_PD1 GPIO_ACTIVE_LOW>;
+	snps,reset-active-low;
+	snps,reset-delays-us = <0 20000 100000>;
+	tx_delay = <0x4f>;
+	rx_delay = <0x26>;
+	phy-handle = <&rgmii_phy1>;
+	status = "disabled";
+};
+
+&mdio1 {
+	rgmii_phy1: ethernet-phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0>;
+	};
+};
+
+/* eMMC — HS200 8-bit, 200MHz max (factory values) */
+&sdhci {
+	bus-width = <8>;
+	max-frequency = <200000000>;
+	non-removable;
+	mmc-hs200-1_8v;
+	status = "okay";
+	bootph-all;
+};
+
+/* SD card — 150MHz max (factory values) */
+&sdmmc0 {
+	max-frequency = <150000000>;
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+	status = "okay";
+	bootph-all;
+};
+
+/* TF slot — factory DTB has it enabled */
+&sdmmc1 {
+	max-frequency = <150000000>;
+	status = "okay";
+};
+
+/*
+ * USB — factory DTB: OTG (fcc00000) + host (fd000000), single USB2 PHY,
+ * both ports ok. Mainline-style nodes here (usb_host0_xhci = the DWC3 at
+ * fcc00000, usb_host1_xhci = fd000000, EHCI/OHCI pairs on usb2phy1).
+ */
+&usb_host0_xhci {
+	status = "okay";
+};
+
+&usb_host1_xhci {
+	status = "okay";
+};
+
+&usb_host0_ehci {
+	status = "okay";
+};
+
+&usb_host0_ohci {
+	status = "okay";
+};
+
+&usb2phy0 {
+	status = "okay";
+};
+
+&usb2phy0_otg {
+	status = "okay";
+};
+
+&usb2phy0_host {
+	status = "okay";
+};
+
+&usb2phy1 {
+	status = "okay";
+};
+
+&usb2phy1_otg {
+	status = "okay";
+};
+
+&usb2phy1_host {
+	status = "okay";
+};
+
+/* PCIe3x2 — factory DTB: enabled, 2 lanes */
+&pcie3x2 {
+	num-lanes = <2>;
+	status = "okay";
+};
+
+/*
+ * OTP-fuse helper block — verbatim from the factory DTB. There is no
+ * upstream driver for "rockchip,rk3568-secure-otp"; the node is kept for
+ * fidelity and for future fuse-reading work.
+ */
+/ {
+	secure_otp@fe3a0000 {
+	compatible = "rockchip,rk3568-secure-otp";
+	reg = <0x0 0xfe3a0000 0x0 0x4000>;
+	secure_conf = <0xfdd18008>;
+	mask_addr = <0xfe880000>;
+		cru_rst_addr = <0xfdd20470>;
+		status = "okay";
+		bootph-pre-ram;
+	};
+};
