@@ -41,9 +41,9 @@
 	aliases {
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac1;
-		/* TF(SD) card = mmc0: boots first in distro_bootcmd */
-		mmc0 = &sdmmc0;
-		mmc1 = &sdhci;
+		/* eMMC=mmc0, SD=mmc1 — matches BOOT_TARGETS "mmc1 mmc0" (SD scanned first) */
+		mmc0 = &sdhci;
+		mmc1 = &sdmmc0;
 		serial2 = &uart2;
 	};
 
