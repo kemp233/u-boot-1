@@ -82,6 +82,26 @@
 		regulator-max-microvolt = <1800000>;
 	};
 
+		/* SD-card rails as fixed always-on regulators (PMIC LDO2/LDO5 hand-set
+	 * via i2c once the controller is up; fixed nodes satisfy phandles) */
+	vcc_sd: regulator-vcc-sd {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_sd";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
+	vccio_sd: regulator-vccio-sd {
+		compatible = "regulator-fixed";
+		regulator-name = "vccio_sd";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+
 	/* Recovery/MASKROM key on SARADC ch0 (factory: press < 9uV) */
 	adc-keys {
 		compatible = "adc-keys";
@@ -169,7 +189,22 @@
 	};
 };
 
-/* eMMC — HS200 8-bit, 200MHz max (factory values) */
+/* i2c0 (PMU domain, PMIC@0x20 per factory private bus) + i2c1-2 buses */
+&i2c0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c0_xfer>;
+};
+
+&i2c1 {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+};
+
+/* SD card — 150MHz max (factory values) */
 &sdhci {
 	bus-width = <8>;
 	max-frequency = <200000000>;
