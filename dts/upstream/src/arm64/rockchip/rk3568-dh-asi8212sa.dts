@@ -221,6 +221,10 @@
 	cap-mmc-highspeed;
 	cap-sd-highspeed;
 	disable-wp;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc0_clk>, <&sdmmc0_cmd>, <&sdmmc0_det>, <&sdmmc0_bus4>;
+	vmmc-supply = <&vcc_sd>;
+	vqmmc-supply = <&vccio_sd>;
 	status = "okay";
 	bootph-all;
 };
@@ -228,6 +232,11 @@
 /* TF slot — factory DTB has it enabled */
 &sdmmc1 {
 	max-frequency = <150000000>;
+	bus-width = <4>;
+	cap-sd-highspeed;
+	disable-wp;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc1_clk>, <&sdmmc1_cmd>, <&sdmmc1_det>, <&sdmmc1_bus4>;
 	status = "okay";
 };
 
