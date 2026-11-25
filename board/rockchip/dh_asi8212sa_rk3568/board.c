@@ -17,10 +17,35 @@
 #include <env.h>
 #include <linux/delay.h>
 
+
+/* GPIO0_A0 / GPIO0_A8 输出低 — loader 阶段立即保持 (外部看门狗/使能脚) */
+#define DH_GPIO0_BASE 0xfdd60000
+
+static void dh_gpio_hold_early(void)
+{
+	*(volatile unsigned int *)(DH_GPIO0_BASE + 0x00) = 0x00020002; /* SWPORT_DR_L  : A0/A8 = 0 */
+	*(volatile unsigned int *)(DH_GPIO0_BASE + 0x08) = 0x00020002; /* SWPORT_DDR_L : A0/A8 output */
+}
+
+void spl_board_init(void)
+{
+	dh_gpio_hold_early();
+}
+
+
+/* GPIO0_A0/A8 输出低 — U-Boot 启动即闭狗 (此阶段 gpio 设备已 probe, 时钟已开) */
+static void dh_gpio_hold_uboot(void)
+{
+	*(volatile unsigned int *)(DH_GPIO0_BASE + 0x00) = 0x00020002; /* SWPORT_DR_L  */
+	*(volatile unsigned int *)(DH_GPIO0_BASE + 0x08) = 0x00020002; /* SWPORT_DDR_L */
+}
+
 int rockchip_dnl_key_pressed(void)
 {
 	unsigned int raw = ~0U;
 	int ret;
+
+	dh_gpio_hold_uboot();
 
 	ret = adc_channel_single_shot("saradc", 0, &raw);
 	if (ret)
