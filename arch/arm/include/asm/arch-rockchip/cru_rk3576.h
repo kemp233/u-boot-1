@@ -89,6 +89,9 @@ struct rk3576_cru {
 check_member(rk3576_cru, mode_con00, 0x280);
 check_member(rk3576_cru, pmuclksel_con[1], 0x20304);
 
+/* Common Rockchip code (e.g. get_reset_cause) uses struct rockchip_cru. */
+#define rockchip_cru rk3576_cru
+
 struct pll_rate_table {
 	unsigned long rate;
 	unsigned int m;
