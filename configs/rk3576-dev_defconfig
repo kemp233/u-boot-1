@@ -49,3 +49,4 @@ CONFIG_USE_BOOTCOMMAND=y
 CONFIG_BOOTCOMMAND="bootflow scan -lb"
 CONFIG_BOOTDELAY=3
 CONFIG_OF_SPL_REMOVE_PROPS="clock-names interrupt-parent assigned-clocks assigned-clock-rates assigned-clock-parents"
+# CONFIG_OPTEE_IMAGE is not set
